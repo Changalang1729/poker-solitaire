@@ -3,5 +3,3 @@ def lget(l, index, default=None):
         return l[index]
     except IndexError:
         return default
-
-
