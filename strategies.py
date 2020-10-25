@@ -21,53 +21,99 @@ HandRankings:
 9. Pair
 """
 
-POKER_HAND_EVALUATOR = Evaluator()
 
+class Poker:
+    def __init__(self, strategy=None, desiredCards=None):
+        self.strategy = strategy
+        self.desiredCards = desiredCards
+        self.POKER_HAND_EVALUATOR = Evaluator()
 
-def isCorrectFlush(playerCards, upperBound):
-    totalCombinations = list(itertools.combinations(playerCards, 5))
-    for combination in totalCombinations:
-        handStrength = POKER_HAND_EVALUATOR.evaluate(list(combination), [])
-        if upperBound == 1609 and handStrength <= 815 and handStrength >= 323:
-            return combination
-        elif upperBound == handStrength and handStrength <= 10 and handStrength >= 1:
-            return combination
+    def isTypeOfCard(self, card):
+        for desiredCard in self.desiredCards:
+            if desiredCard in card:
+                self.desiredCards.remove(desiredCard)
+                return True
+        return False
 
-    return None
+    def simulatePokerStrategy(self):
+        playerCards, communityCards, deck = set(), set(), Deck()
+        while (desiredCombo := self.isDesiredHand(communityCards)) == None:
+            card = deck.draw(1)
+            communityCards.add(card)
 
+        communityCards -= set(desiredCombo)
+        communityCards |= set(deck.draw(5 - len(communityCards)))
+        playerCards = desiredCombo
 
-def findFlushCombo(isStraight, isRoyal):
-    playerCards, communityCards, deck = set(), set(), Deck()
-    upperBound = 10 if isStraight else 1 if isRoyal else 815
-    while (flushCombo := isCorrectFlush(playerCards, upperBound)) == None:
-        card = deck.draw(1)
-        playerCards.add(card)
+        return playerCards, communityCards
 
-    communityCards = playerCards - set(flushCombo)
-    playerCards = set(flushCombo)
+    def isDesiredHand(self, playerCards):
+        return (
+            self.isDesiredHandGeneral(playerCards)
+            if self.desiredCards
+            else self.isDesiredHandStrategy(playerCards)
+        )
 
-    return communityCards, playerCards
+    def isDesiredHandGeneral(self, playerCards):
+        playerDesiredCards = []
 
+        if len(playerCards) < 5:
+            return None
 
-def isStraight(playerCards):
-    totalCombinations = list(itertools.combinations(playerCards, 5))
-    for combination in totalCombinations:
-        handStrength = POKER_HAND_EVALUATOR.evaluate(list(combination), [])
-        if handStrength >= 1 and handStrength <= 10:
-            return combination
-        elif handStrength >= 1600 and handStrength <= 1609:
-            return combination
+        for card in playerCards:
+            stringCardDrawn = Card.print_pretty_card(card)
+            if self.isTypeOfCard(stringCardDrawn, self.desiredCards):
+                playerDesiredCards.append(card)
 
-    return None
+        if len(playerDesiredCards) >= 5:
+            return playerCards
 
+        return None
 
-def findStraight():
-    playerCards, communityCards, deck = set(), set(), Deck()
-    while (straightCombo := isStraight(playerCards)) == None:
-        card = deck.draw(1)
-        playerCards.add(card)
+    # tech debt, should be done with polymorphism instead
+    def isDesiredHandStrategy(self, playerCards):
+        allSatisfiedHands, strongestComboIndex = [], 0
 
-    communityCards = playerCards - set(straightCombo)
-    playerCards = set(straightCombo)
+        handRankingsUpperBoundsForStrats = {
+            "straight": (1609, 1600),
+            "flush": (1599, 323),
+            "pair": (6185, 3326),
+            "two-pair": (3325, 2468),
+            "trips": (2467, 1610),
+            "boat": (322, 167),
+            "quads": (166, 11),
+            "royal": (1, 1),
+            "straight-flush": (10, 1),
+        }
 
-    return communityCards, playerCards
+        lowerBound, upperBound = handRankingsUpperBoundsForStrats[self.strategy]
+
+        totalCombinations = list(itertools.combinations(playerCards, 5))
+        for combination in totalCombinations:
+            handStrength = self.POKER_HAND_EVALUATOR.evaluate(list(combination), [])
+            if handStrength <= upperBound and handStrength >= lowerBound:
+                allSatisfiedHands.append(combination)
+
+        if allSatisfiedHands:
+            (_, strongestComboIndex) = max(
+                (self.POKER_HAND_EVALUATOR.evaluate(list(satisfiedHand), []), i)
+                for i, satisfiedHand in enumerate(allSatisfiedHands)
+            )
+
+        return lget(allSatisfiedHands, strongestComboIndex)
+
+    def isPlayerHandBetter(self, playerCards, communityCards):
+        if not playerCards or not communityCards:
+            print("ERROR: NO PLAYER CARDS OR NO COMMUNITY CARDS")
+
+        playerHandStrength = self.POKER_HAND_EVALUATOR.evaluate(playerCards, [])
+        totalCombinations = list(itertools.combinations(communityCards, 5))
+        (communityHandStrength, communityHandComboIndex) = min(
+            (self.POKER_HAND_EVALUATOR.evaluate(list(combination), []), index)
+            for index, combination in enumerate(totalCombinations)
+        )
+
+        return (
+            playerHandStrength <= communityHandStrength,
+            totalCombinations[communityHandComboIndex],
+        )
