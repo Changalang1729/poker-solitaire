@@ -2,6 +2,7 @@ from treys import Evaluator
 from treys import Card
 from treys import Deck
 from utils import lget
+
 import itertools
 
 
@@ -53,7 +54,6 @@ class Poker:
     # tech debt, should be done with polymorphism instead
     def isDesiredHand(self, playerCards):
         allSatisfiedHands, strongestComboIndex = [], 0
-
         handRankingsUpperBoundsForStrats = {
             "straight": (1609, 1600),
             "flush": (1599, 323),
@@ -71,7 +71,7 @@ class Poker:
         totalCombinations = list(itertools.combinations(playerCards, 5))
         for combination in totalCombinations:
             handStrength = self.POKER_HAND_EVALUATOR.evaluate(list(combination), [])
-            if handStrength <= upperBound and handStrength >= lowerBound:
+            if handStrength >= upperBound and handStrength <= lowerBound:
                 allSatisfiedHands.append(combination)
 
         if allSatisfiedHands:
