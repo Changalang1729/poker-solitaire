@@ -1,7 +1,7 @@
 from treys import Evaluator
 from treys import Card
 from treys import Deck
-from utils import lget
+from utils import lget, setify
 
 import itertools
 
@@ -32,8 +32,8 @@ class Poker:
             card = deck.draw(1)
             communityCards.add(card)
 
-        communityCards -= set(desiredCombo)
-        communityCards |= set(deck.draw(5 - len(communityCards)))
+        communityCards -= setify(desiredCombo)
+        communityCards |= setify(deck.draw(5 - len(communityCards)))
         playerCards = desiredCombo
 
         return list(playerCards), list(communityCards)
