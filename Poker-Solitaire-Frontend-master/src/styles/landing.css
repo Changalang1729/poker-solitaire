@@ -1,0 +1,21 @@
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial,
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 82px;
+  line-height: 88px;
+  font-weight: 600;
+  text-align: center;
+  max-width: 9999999px !important;
+  margin: 0px;
+  color: rgb(68, 68, 68);
+}
+
+landing-container {
+  min-height: 100vh;
+}
